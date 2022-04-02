@@ -92,6 +92,10 @@ async def main():
 	APP.run(host="127.0.0.1", port=42069, loop=loop)
 
 	# await asyncio.gather(board_task, users_task)
+	board_task = asyncio.get_event_loop().create_task(run(pool, pixels, offsetX, offsetY, board))
+	users_task = asyncio.get_event_loop().create_task(gen_users(pool))
+
+	await asyncio.gather(board_task, users_task)
 
 	# await u.put(RedditColor.TEST, 320, 350)
 
