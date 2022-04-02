@@ -7,10 +7,12 @@ from typing import List
 from dataclasses import dataclass
 
 from aioconsole import ainput
+from quart import Quart, request
 
 from place.board import PixelMap
 from place.user import Pool, User
 from place.colors import RedditColor
+from place.webform import LANDING, FORM_OK
 
 MAP_UPDATE_INTERVAL = 60 #Will request a map update every MAP_UPDATE_INTERVAL seconds
 CLIENT_ID = ""
@@ -18,6 +20,20 @@ CLIENT_SECRET = ""
 REDIRECT_URI = "https://fantabos.co/msauth"
 
 logger = logging.getLogger(__file__)
+
+APP = Quart(__name__)
+POOL = Pool()
+
+@APP.route("/", methods=["GET"])
+async def landing():
+	return LANDING
+
+@APP.route("/", methods=["POST"])
+async def form_data():
+	form = await request.form
+	POOL.add_user(User(form['username'], form['token']))
+	logging.info("received user from web app : %s", form['username'])
+	return FORM_OK
 
 async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap) -> int:
 	size = pixels.shape
@@ -63,16 +79,19 @@ async def gen_users(users: Pool):
 		users.add_user(User(name, token))
 
 async def main():
-	pool = Pool()
 	board = PixelMap()
 	pixels = np.loadtxt("input.txt", dtype='int32')
 	offsetX = int(sys.argv[1])
 	offsetY = int(sys.argv[2])
 
-	board_task = asyncio.get_event_loop().create_task(run(pool, pixels, offsetX, offsetY, board))
-	users_task = asyncio.get_event_loop().create_task(gen_users(pool))
+	loop = asyncio.get_event_loop()
 
-	await asyncio.gather(board_task, users_task)
+	board_task = loop.create_task(run(POOL, pixels, offsetX, offsetY, board))
+	users_task = loop.create_task(gen_users(POOL))
+
+	APP.run(host="127.0.0.1", port=42069, loop=loop)
+
+	# await asyncio.gather(board_task, users_task)
 
 	# await u.put(RedditColor.TEST, 320, 350)
 

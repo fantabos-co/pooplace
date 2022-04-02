@@ -1,6 +1,8 @@
 aiohttp
 apscheduler
 websocket-client
+quart
+aioconsole
 numpy
 praw
 pillow
