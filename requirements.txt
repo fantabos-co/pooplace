@@ -1,0 +1,8 @@
+aiohttp
+apscheduler
+websocket-client
+numpy
+praw
+pillow
+browser_cookie3
+jwt
