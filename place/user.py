@@ -12,6 +12,9 @@ def get_payload(x:int, y:int, c:int):
 
 _ALL_SCOPES = ["account", "creddits", "edit", "flair", "history", "identity", "livemanage", "modconfig", "modcontributors", "modflair", "modlog", "modmail", "modnote", "modothers", "modposts", "modself", "modwiki", "mysubreddits", "privatemessages", "read", "report", "save", "structuredstyles", "submit", "subscribe", "vote", "wikiedit", "wikiread"]
 
+class UnauthorizedError(Exception):
+	pass
+
 class User:
 	name : str
 	token : str
@@ -84,6 +87,10 @@ class User:
 			async with sess.post(self.URL, headers=self.headers, data=get_payload(x=x, y=y, c=color)) as res:
 				answ = await res.json()
 				self.logger.debug("set-pixel response: %s", str(answ))
+		if 'success' in answ and not answ['success'] \
+		and 'error' in answ and answ['error'] \
+		and 'reason' in answ['error'] and answ['error']['reason'] == 'UNAUTHORIZED':
+			raise UnauthorizedError()
 		if "data" in answ and answ['data']:
 			for act in answ["data"]["act"]["data"]:
 				if "nextAvailablePixelTimestamp" in act['data']:
@@ -128,7 +135,7 @@ class Pool:
 		self.users.append(u)
 
 	def remove_user(self, n:str):
-		users = [u for u in users if u.name != n]
+		self.users = [u for u in self.users if u.name != n]
 		
 	async def put(self, color:RedditColor, x:int, y:int):
 		for u in self.users:

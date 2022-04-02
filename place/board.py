@@ -6,6 +6,8 @@ import websocket
 import aiohttp
 import logging
 
+from place.user import UnauthorizedError
+
 HEIGHT = 1000
 WIDTH = 2000
 
@@ -33,7 +35,10 @@ class PixelMap:
 				}
 			)
 		)
-		self.logger.debug(ws.recv())
+		data = json.loads(ws.recv())
+		self.logger.debug(data)
+		if data['payload']['message'].startswith('401'):
+			raise UnauthorizedError()
 		ws.send(
 			json.dumps(
 				{
@@ -55,7 +60,10 @@ class PixelMap:
 				}
 			)
 		)
-		self.logger.debug(ws.recv())
+		data = json.loads(ws.recv())
+		self.logger.debug(data)
+		if data['payload']['message'].startswith('401'):
+			raise UnauthorizedError()
 		ws.send(
 			json.dumps(
 				{
@@ -82,6 +90,9 @@ class PixelMap:
 		file = ""
 		for _i in range(attempts):
 			temp = json.loads(ws.recv())
+			self.logger.debug(data)
+			if data['payload']['message'].startswith('401'):
+				raise UnauthorizedError()
 			if temp["type"] == "data":
 				msg = temp["payload"]["data"]["subscribe"]
 				if msg["data"]["__typename"] == "FullFrameMessageData":
