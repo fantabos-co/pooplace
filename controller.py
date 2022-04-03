@@ -5,6 +5,7 @@ import numpy as np
 
 from time import time
 from uuid import uuid4
+import json
 
 import rauth
 from aioconsole import ainput
@@ -15,8 +16,8 @@ from place.user import Pool, UnauthorizedError, User
 from place.webform import LANDING, FORM_OK, FORM_NOK
 
 MAP_UPDATE_INTERVAL = 60 #Will request a map update every MAP_UPDATE_INTERVAL seconds
-CLIENT_ID = "wLPQSYwEJdUXfnrXTsUyfQ"
-CLIENT_SECRET = "YfpikK-FvwBc_D7929X4MoXJv2bo5w"
+CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
+CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
 REDIRECT_URI = "https://pooblic.org/place"
 
 CLIENT = rauth.service.OAuth2Service(
@@ -45,14 +46,17 @@ async def landing():
 					grant_type="authorization_code",
 					code=code,
 					redirect_uri=REDIRECT_URI
-				)
+				),
+				headers={'User-Agent': 'python:pooplace:1.0 (by /u/Exact_Worldliness562)'},
+				decoder=json.loads				
 			)
-			logger.info(str(response.content))
-			token = response.content["access_token"]
-			POOL.add_user(User(user, token))
+			logger.info(str(response))
+			#token = response.access_token
+			POOL.add_user(User(user, response))
 			logging.info("received user from web app : %s", user)
 			return FORM_OK
 		except KeyError as e:
+			logging.warning(str(response))
 			logging.warning("failed to get access token : %s", str(e))
 			return FORM_NOK
 	else:
@@ -61,7 +65,8 @@ async def landing():
 			response_type="code",
 			scope="identity",
 			state=str(uuid4()),
-			redirect_uri=REDIRECT_URI
+			redirect_uri=REDIRECT_URI,
+			duration='permanent',
 		)
 		return redirect(authorize_url)
 
@@ -78,11 +83,13 @@ async def form_data():
 					grant_type="authorization_code",
 					code=code,
 					redirect_uri=REDIRECT_URI
-				)
+				),
+				headers={'User-Agent': 'python:pooplace:1.0 (by /u/Exact_Worldliness562)'},
+				decoder=json.loads
 			)
-			logger.debug(str(response.content))
-			token = response.content["access_token"]
+			logger.debug(str(response))
 		except KeyError as e:
+			logger.debug(str(response))
 			logger.error("error getting access token : %s", str(e))
 			return FORM_NOK
 	else:
@@ -90,7 +97,7 @@ async def form_data():
 		user = form['username']
 		token = form['token']
 
-	POOL.add_user(User(user, token))
+	POOL.add_user(User(user, response))
 	logging.info("received user from web app : %s", user)
 	return FORM_OK
 
@@ -99,6 +106,7 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 	count = 0
 	for px in range(size[0]):
 		for py in range(size[1]):
+			logger.debug(f"working on {px}, {py}")
 			if pixels[px][py] == -1:
 				continue
 			if board[oX + px][oY + py] != pixels[px][py]:
@@ -119,9 +127,10 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 	last_sync = 0
 	while True:
+		logger.debug("hi")
 		if len(users) <= 0:
 			logger.warning("no available users")
-			await asyncio.sleep(60)
+			await asyncio.sleep(2)
 			continue
 		usr = users.best()
 		if usr.cooldown > 0:
