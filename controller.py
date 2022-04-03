@@ -47,13 +47,13 @@ async def landing():
 					redirect_uri=REDIRECT_URI
 				)
 			)
-			logger.debug(str(response.content))
+			logger.info(str(response.content))
 			token = response.content["access_token"]
 			POOL.add_user(User(user, token))
 			logging.info("received user from web app : %s", user)
 			return FORM_OK
-		except KeyError:
-			logging.warning("failed to get access token")
+		except KeyError as e:
+			logging.warning("failed to get access token : %s", str(e))
 			return FORM_NOK
 	else:
 		# return LANDING
@@ -121,7 +121,7 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 	while True:
 		if len(users) <= 0:
 			logger.warning("no available users")
-			await asyncio.sleep(10)
+			await asyncio.sleep(60)
 			continue
 		usr = users.best()
 		if usr.cooldown > 0:
