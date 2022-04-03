@@ -1,20 +1,31 @@
 import asyncio
 import logging
+from aioauth_client import OAuth2Client
 import numpy as np
 
 from time import time
+from uuid import uuid4
 
+import rauth
 from aioconsole import ainput
-from quart import Quart, request
+from quart import Quart, request, redirect
 
 from place.board import PixelMap
 from place.user import Pool, UnauthorizedError, User
-from place.webform import LANDING, FORM_OK
+from place.webform import LANDING, FORM_OK, FORM_NOK
 
 MAP_UPDATE_INTERVAL = 60 #Will request a map update every MAP_UPDATE_INTERVAL seconds
-CLIENT_ID = ""
-CLIENT_SECRET = ""
-REDIRECT_URI = "https://fantabos.co/msauth"
+CLIENT_ID = "wLPQSYwEJdUXfnrXTsUyfQ"
+CLIENT_SECRET = "YfpikK-FvwBc_D7929X4MoXJv2bo5w"
+REDIRECT_URI = "https://pooblic.org/place"
+
+CLIENT = rauth.service.OAuth2Service(
+	name="reddit",
+	client_id=CLIENT_ID,
+	client_secret=CLIENT_SECRET,
+	access_token_url="https://ssl.reddit.com/api/v1/access_token",
+	authorize_url="https://ssl.reddit.com/api/v1/authorize"
+)
 
 logger = logging.getLogger(__file__)
 
@@ -23,13 +34,64 @@ POOL = Pool()
 
 @APP.route("/", methods=["GET"])
 async def landing():
-	return LANDING
+	if 'code' in request.args:
+		user = "unk"	
+		# when user is redirected back after authorizing:
+		code = request.args["code"]
+		try:
+			response = CLIENT.get_access_token(
+				auth=(CLIENT.client_id, CLIENT.client_secret),
+				data=dict(
+					grant_type="authorization_code",
+					code=code,
+					redirect_uri=REDIRECT_URI
+				)
+			)
+			logger.debug(str(response.content))
+			token = response.content["access_token"]
+			POOL.add_user(User(user, token))
+			logging.info("received user from web app : %s", user)
+			return FORM_OK
+		except KeyError:
+			logging.warning("failed to get access token")
+			return FORM_NOK
+	else:
+		# return LANDING
+		authorize_url = CLIENT.get_authorize_url(
+			response_type="code",
+			scope="identity",
+			state=str(uuid4()),
+			redirect_uri=REDIRECT_URI
+		)
+		return redirect(authorize_url)
 
 @APP.route("/", methods=["POST"])
 async def form_data():
-	form = await request.form
-	POOL.add_user(User(form['username'], form['token']))
-	logging.info("received user from web app : %s", form['username'])
+	if 'code' in request.args:
+		user = "unk"	
+		# when user is redirected back after authorizing:
+		code = request.args["code"]
+		try:
+			response = CLIENT.get_access_token(
+				auth=(CLIENT.client_id, CLIENT.client_secret),
+				data=dict(
+					grant_type="authorization_code",
+					code=code,
+					redirect_uri=REDIRECT_URI
+				)
+			)
+			logger.debug(str(response.content))
+			token = response.content["access_token"]
+		except KeyError as e:
+			logger.error("error getting access token : %s", str(e))
+			return FORM_NOK
+	else:
+		form = await request.form
+		user = form['username']
+		token = form['token']
+
+	POOL.add_user(User(user, token))
+	logging.info("received user from web app : %s", user)
 	return FORM_OK
 
 async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap) -> int:
@@ -37,6 +99,8 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 	count = 0
 	for px in range(size[0]):
 		for py in range(size[1]):
+			if pixels[px][py] == -1:
+				continue
 			if board[oX + px][oY + py] != pixels[px][py]:
 				# get shortest cooldown in pool
 				usr = users.best()
@@ -90,6 +154,11 @@ if __name__ == "__main__":
 	import sys
 	logging.basicConfig(level=logging.DEBUG)
 
+	print(CLIENT.get_authorize_url(
+		scopes=['identity'],
+		state="ifthereisafloodofnewplayers",
+	))
+
 	board = PixelMap()
 	pixels = np.loadtxt("input.txt", dtype='int32')
 	offsetX = int(sys.argv[1])
@@ -100,4 +169,6 @@ if __name__ == "__main__":
 	board_task = loop.create_task(run(POOL, pixels, offsetX, offsetY, board))
 	users_task = loop.create_task(gen_users(POOL))
 
-	APP.run(host="127.0.0.1", port=42069, loop=loop)
+	APP.run(host="127.0.0.1", port=52691, loop=loop)
+
+	# https://www.reddit.com/api/v1/authorize?client_id=wLPQSYwEJdUXfnrXTsUyfQ&duration=permanent&redirect_uri=https%3A%2F%2Fpooblic.org%2Fplace&response_type=code&scope=identity&state=ifthereisafloodofnewplayers

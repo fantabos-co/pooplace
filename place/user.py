@@ -1,10 +1,14 @@
+import os
 import aiohttp
-from praw import Reddit
+from praw import reddit
+from aioauth_client import OAuth2Client #https://aliev.me/aioauth
+import rauth
 import json
 from time import time
-from typing import List
+from typing import List, Optional
 import logging
 
+from aioconsole import ainput
 from place.colors import RedditColor
 
 def get_payload(x:int, y:int, c:int):
@@ -18,6 +22,7 @@ class UnauthorizedError(Exception):
 class User:
 	name : str
 	token : str
+	refresh : Optional[str]
 	_next_time : int
 
 	URL = "https://gql-realtime-2.reddit.com/query"
@@ -25,15 +30,23 @@ class User:
 	def __init__(
 		self,
 		name:str,
-		token:str
+		token:str,
+		refresh:Optional[str] = None
 	):
 		self.logger = logging.getLogger("user({username})")
 		self.name = name
 		self.token = token
+		self.refresh = refresh
 		self._next_time = 0
 
+	def as_dict(self):
+		return {"name": self.name, "token": self.token, "refresh": self.refresh or "null"}
+
+	def __str__(self):
+		return json.dumps(self.as_dict())
+
 	@classmethod
-	def manual_login(
+	async def manual_login(
 		cls,
 		client_id:str,
 		client_secret:str,
@@ -41,21 +54,18 @@ class User:
 		user_agent:str,
 		scopes:List[str],
 	) -> 'User':
-		client = Reddit(
+		client = OAuth2Client(
 			client_id=client_id,
 			client_secret=client_secret,
-			user_agent=user_agent,
-			redirect_uri=redirect_uri,
+			authorize_url=redirect_uri,
 		)
-
 		print("> go to this url and login")
-		print(client.auth.url(
+		print(await client.get_authorize_url(
 			scopes=scopes,
-			state="fuck you",
+			state="ifthereisafloodofnewplayers",
 		))
-		code = input("code > ")
-		client.auth.authorize(code)
-		token = client._authorized_core._authorizer.access_token
+		code = ainput("code > ")
+		token, provider = await client.get_access_token(code, redirect_uri=redirect_uri)
 
 		return cls(
 			"manual",
@@ -106,14 +116,23 @@ class User:
 class Pool:
 	users : List[User]
 
-	def __init__(self):
+	def __init__(self, storage="pool.json"):
 		self.users = list()
+		if os.path.isfile(storage):
+			with open(storage) as f:
+				data = json.load(f)
+			for el in data:
+				self.users.append(User(el["name"], el["token"]))
 
 	def __iter__(self):
 		return iter(self.users)
 
 	def __len__(self):
 		return len(self.users)
+
+	def serialize(self, storage="pool.json"):
+		with open(storage, "w") as f:
+			json.dump([ u.as_dict() for u in self.users ], f, default=str, indent=2)
 
 	@property
 	def any(self) -> bool:
@@ -133,9 +152,11 @@ class Pool:
 
 	def add_user(self, u:User):
 		self.users.append(u)
+		self.serialize()
 
 	def remove_user(self, n:str):
 		self.users = [u for u in self.users if u.name != n]
+		self.serialize()
 		
 	async def put(self, color:RedditColor, x:int, y:int):
 		for u in self.users:
