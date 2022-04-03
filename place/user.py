@@ -90,7 +90,7 @@ class User:
 		if 'success' in answ and not answ['success'] \
 		and 'error' in answ and answ['error'] \
 		and 'reason' in answ['error'] and answ['error']['reason'] == 'UNAUTHORIZED':
-			raise UnauthorizedError()
+			raise UnauthorizedError(str(answ))
 		if "data" in answ and answ['data']:
 			for act in answ["data"]["act"]["data"]:
 				if "nextAvailablePixelTimestamp" in act['data']:

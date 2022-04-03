@@ -38,7 +38,7 @@ class PixelMap:
 		data = json.loads(ws.recv())
 		self.logger.debug(data)
 		if data['payload']['message'].startswith('401'):
-			raise UnauthorizedError()
+			raise UnauthorizedError(str(data))
 		ws.send(
 			json.dumps(
 				{
@@ -63,7 +63,7 @@ class PixelMap:
 		data = json.loads(ws.recv())
 		self.logger.debug(data)
 		if data['payload']['message'].startswith('401'):
-			raise UnauthorizedError()
+			raise UnauthorizedError(str(data))
 		ws.send(
 			json.dumps(
 				{
@@ -92,7 +92,7 @@ class PixelMap:
 			temp = json.loads(ws.recv())
 			self.logger.debug(data)
 			if data['payload']['message'].startswith('401'):
-				raise UnauthorizedError()
+				raise UnauthorizedError(str(data))
 			if temp["type"] == "data":
 				msg = temp["payload"]["data"]["subscribe"]
 				if msg["data"]["__typename"] == "FullFrameMessageData":

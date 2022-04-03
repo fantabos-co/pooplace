@@ -46,8 +46,8 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 				try:
 					if await usr.put(pixels[px][py], oX + px, oY + py):
 						count += 1
-				except UnauthorizedError:
-					logger.error("Unauthorized %s : %s", usr.name, usr.token)
+				except UnauthorizedError as e:
+					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
 					users.remove_user(usr.name)
 					return count
 	return count
@@ -66,8 +66,8 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 		if time() - last_sync > MAP_UPDATE_INTERVAL:
 			try:
 				await board.fetch(usr.token) #doesnt matter whose token we use
-			except UnauthorizedError:
-				logger.error("Unauthorized %s : %s", usr.name, usr.token)
+			except UnauthorizedError as e:
+				logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
 				users.remove_user(usr.name)
 				continue
 			last_sync = time()
