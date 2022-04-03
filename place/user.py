@@ -104,7 +104,7 @@ class User:
 		if "data" in answ and answ['data']:
 			for act in answ["data"]["act"]["data"]:
 				if "nextAvailablePixelTimestamp" in act['data']:
-					self._next_time = act['data']['nextAvailablePixelTimestamp']
+					self._next_time = act['data']['nextAvailablePixelTimestamp'] / 1000
 					return True
 		if "errors" in answ and answ['errors']:
 			for err in answ['errors']:

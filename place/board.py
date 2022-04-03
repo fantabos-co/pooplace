@@ -1,5 +1,6 @@
 import json
 from io import BytesIO
+import os
 from PIL import Image
 import numpy as np
 import websocket
@@ -37,8 +38,9 @@ class PixelMap:
 		)
 		data = json.loads(ws.recv())
 		self.logger.debug(data)
-		if data['payload']['message'].startswith('401'):
+		if 'payload' in data and data['payload']['message'].startswith('401'):
 			raise UnauthorizedError(str(data))
+			#https://github.com/rdeepak2002/reddit-place-script-2022/blob/932a8039d863f53082e113f6bb18c3214082952b/main.py#L296
 		ws.send(
 			json.dumps(
 				{
@@ -62,7 +64,7 @@ class PixelMap:
 		)
 		data = json.loads(ws.recv())
 		self.logger.debug(data)
-		if data['payload']['message'].startswith('401'):
+		if 'payload' in data and data['payload']['message'].startswith('401'):
 			raise UnauthorizedError(str(data))
 		ws.send(
 			json.dumps(
@@ -91,7 +93,7 @@ class PixelMap:
 		for _i in range(attempts):
 			temp = json.loads(ws.recv())
 			self.logger.debug(data)
-			if data['payload']['message'].startswith('401'):
+			if 'payload' in data and data['payload']['message'].startswith('401'):
 				raise UnauthorizedError(str(data))
 			if temp["type"] == "data":
 				msg = temp["payload"]["data"]["subscribe"]
@@ -110,3 +112,5 @@ class PixelMap:
 
 		self.board = np.subtract(np.array(image, dtype='int32'), 1)
 		self.logger.info("downloaded board : %s", file)
+		os.remove("board.txt")
+		np.savetxt("board.txt", self.board, fmt="%d")

@@ -15,7 +15,8 @@ from place.board import PixelMap
 from place.user import Pool, UnauthorizedError, User
 from place.webform import LANDING, FORM_OK, FORM_NOK
 
-MAP_UPDATE_INTERVAL = 60 #Will request a map update every MAP_UPDATE_INTERVAL seconds
+DISPATCHER_MAX_SLEEP = 30
+MAP_UPDATE_INTERVAL = 10 #Will request a map update every MAP_UPDATE_INTERVAL seconds
 CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
 CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
 REDIRECT_URI = "https://pooblic.org/place"
@@ -36,7 +37,7 @@ POOL = Pool()
 @APP.route("/", methods=["GET"])
 async def landing():
 	if 'code' in request.args:
-		user = "unk"	
+		user = "unk" #TODO fetch acc name	
 		# when user is redirected back after authorizing:
 		code = request.args["code"]
 		try:
@@ -56,7 +57,8 @@ async def landing():
 			logging.info("received user from web app : %s", user)
 			return FORM_OK
 		except KeyError as e:
-			logging.warning(str(response))
+			if "response" in locals():
+				logging.warning(str(response))
 			logging.warning("failed to get access token : %s", str(e))
 			return FORM_NOK
 	else:
@@ -104,19 +106,19 @@ async def form_data():
 async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap) -> int:
 	size = pixels.shape
 	count = 0
-	for px in range(size[0]):
-		for py in range(size[1]):
-			logger.debug(f"working on {px}, {py}")
-			if pixels[px][py] == -1:
+	for px in range(size[1]):
+		for py in range(size[0]):
+			if pixels[py][px] == -1:
 				continue
-			if board[oX + px][oY + py] != pixels[px][py]:
-				# get shortest cooldown in pool
+			if board[oY + py][oX + px] != pixels[py][px]:
+				logger.debug(f"comparing {oX+px}, {oY+py} with {px}, {py}")
+			# get shortest cooldown in pool
 				usr = users.best()
 				if usr.cooldown > 0:
 					return count
 				# try to fill this pixel
 				try:
-					if await usr.put(pixels[px][py], oX + px, oY + py):
+					if await usr.put(pixels[py][px], oX + px, oY + py):
 						count += 1
 				except UnauthorizedError as e:
 					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
@@ -127,15 +129,17 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 	last_sync = 0
 	while True:
-		logger.debug("hi")
 		if len(users) <= 0:
 			logger.warning("no available users")
-			await asyncio.sleep(2)
+			await asyncio.sleep(10)
 			continue
 		usr = users.best()
 		if usr.cooldown > 0:
-			logger.info("sleeping %d", usr.cooldown)
-			await asyncio.sleep(usr.cooldown)
+			actual_sleep = min(usr.cooldown, DISPATCHER_MAX_SLEEP)
+			logger.info("sleeping %d (%d)", actual_sleep, usr.cooldown)
+			await asyncio.sleep(actual_sleep)
+
+			continue
 		if time() - last_sync > MAP_UPDATE_INTERVAL:
 			try:
 				await board.fetch(usr.token) #doesnt matter whose token we use
@@ -169,7 +173,7 @@ if __name__ == "__main__":
 	))
 
 	board = PixelMap()
-	pixels = np.loadtxt("input.txt", dtype='int32')
+	pixels = np.loadtxt("input.txt", dtype='int32') # TODO invert x and y
 	offsetX = int(sys.argv[1])
 	offsetY = int(sys.argv[2])
 
@@ -178,6 +182,6 @@ if __name__ == "__main__":
 	board_task = loop.create_task(run(POOL, pixels, offsetX, offsetY, board))
 	users_task = loop.create_task(gen_users(POOL))
 
-	APP.run(host="127.0.0.1", port=52691, loop=loop)
+	APP.run(host="127.0.0.1", port=52691, loop=loop, use_reloader=False)
 
 	# https://www.reddit.com/api/v1/authorize?client_id=wLPQSYwEJdUXfnrXTsUyfQ&duration=permanent&redirect_uri=https%3A%2F%2Fpooblic.org%2Fplace&response_type=code&scope=identity&state=ifthereisafloodofnewplayers

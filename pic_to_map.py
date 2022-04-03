@@ -17,6 +17,7 @@ if __name__ == "__main__":
 					clr = array[x][y]
 					if len(clr) > 3 and clr[3] != 255:
 						f.write("-1 ")
+						continue
 					color = RedditColor.closest(clr[0], clr[1], clr[2])
 					f.write(f"{color.value} ")
 				f.write("\n")
