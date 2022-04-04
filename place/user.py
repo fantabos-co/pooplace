@@ -7,6 +7,7 @@ import json
 from time import time
 from typing import List, Optional
 import logging
+from uuid import uuid4
 
 from aioconsole import ainput
 from place.colors import RedditColor
@@ -17,6 +18,7 @@ def get_payload(x:int, y:int, c:int):
 _ALL_SCOPES = ["account", "creddits", "edit", "flair", "history", "identity", "livemanage", "modconfig", "modcontributors", "modflair", "modlog", "modmail", "modnote", "modothers", "modposts", "modself", "modwiki", "mysubreddits", "privatemessages", "read", "report", "save", "structuredstyles", "submit", "subscribe", "vote", "wikiedit", "wikiread"]
 CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
 CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
+USER_AGENT = "python:placepoop:1.0 (by /u/Exact_Worldliness265)"
 
 class UnauthorizedError(Exception):
 	refreshable : bool
@@ -25,6 +27,7 @@ class UnauthorizedError(Exception):
 		self.refreshable = refreshable
 
 class User:
+	id : str
 	name : str
 	token : str
 	refresh : Optional[str]
@@ -38,7 +41,9 @@ class User:
 		token:str,
 		refresh:Optional[str] = None,
 		next:Optional[int] = None,
+		id:Optional[str] = None,
 	):
+		self.id = id or str(uuid4())
 		self.logger = logging.getLogger(f"user({name})")
 		self.name = name
 		self.token = token
@@ -47,14 +52,25 @@ class User:
 
 	def as_dict(self):
 		return {
+			"id": self.id,
 			"name": self.name,
 			"token": self.token,
-			"refresh": self.refresh or "null",
-			"next": self.next or "null"
+			"refresh": self.refresh or None,
+			"next": self.next or None
 		}
 
 	def __str__(self):
 		return json.dumps(self.as_dict())
+
+	async def get_username(self):
+		async with aiohttp.ClientSession() as sess:
+			async with sess.get(
+				"https://oauth.reddit.com/api/v1/me",
+				headers={"User-Agent": USER_AGENT, "Authorization": f"bearer {self.token}"},
+			) as res:
+				data = await res.json()
+		self.name = data['subreddit']['display_name_prefixed']
+		return self.name
 
 	async def refresh_token(self):
 		if not self.refresh or self.refresh == "null": # TODO remove literal 'null'
@@ -75,35 +91,9 @@ class User:
 				data = await res.json()
 				self.logger.debug(data)
 				self.token = data['access_token']
+		await self.get_username() # make sure new token is valid
 		self.logger.info(f"refreshed user {self.name}")
 		
-	@classmethod
-	async def manual_login(
-		cls,
-		client_id:str,
-		client_secret:str,
-		redirect_uri:str,
-		user_agent:str,
-		scopes:List[str],
-	) -> 'User':
-		client = OAuth2Client(
-			client_id=client_id,
-			client_secret=client_secret,
-			authorize_url=redirect_uri,
-		)
-		print("> go to this url and login")
-		print(await client.get_authorize_url(
-			scopes=scopes,
-			state="ifthereisafloodofnewplayers",
-		))
-		code = ainput("code > ")
-		token, provider = await client.get_access_token(code, redirect_uri=redirect_uri)
-
-		return cls(
-			"manual",
-			token,
-		)
-
 	@property
 	def headers(self):
 		return {
@@ -163,6 +153,7 @@ class Pool:
 						el["token"],
 						el["refresh"] if "refresh" in el and el["refresh"] != "null" else None,
 						el["next"] if "next" in el and el["next"] != "null" else None,
+						id=el["id"] if "id" in el else None,
 					)
 				)
 
@@ -179,6 +170,11 @@ class Pool:
 	@property
 	def any(self) -> bool:
 		return any(u.cooldown <= 0 for u in self)
+
+	@property
+	def ready(self) -> int:
+		"""Returns how many users are ready to place"""
+		return sum(1 for u in self.users if u.cooldown <= 0)
 
 	def best(self) -> User:
 		"""Returns the user with the shortest cooldown"""

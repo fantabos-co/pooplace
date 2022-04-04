@@ -19,5 +19,5 @@ if __name__ == "__main__":
 						f.write("-1 ")
 						continue
 					color = RedditColor.closest(clr[0], clr[1], clr[2])
-					f.write(f"{color.value} ")
+					f.write(f"{color.value:02d} ")
 				f.write("\n")

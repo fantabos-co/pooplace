@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import logging
 import numpy as np
@@ -6,7 +7,8 @@ from logging import StreamHandler, getLogger, Formatter, LogRecord, DEBUG, INFO,
 from logging.handlers import RotatingFileHandler
 from termcolor import colored
 
-from typing import Dict
+from typing import Dict, List, Optional
+from dataclasses import dataclass
 from time import time
 from uuid import uuid4
 import json
@@ -20,7 +22,22 @@ from quart.logging import default_handler, serving_handler
 
 from place.board import PixelMap
 from place.user import Pool, UnauthorizedError, User
-from place.static.webform import LANDING, FORM_OK, FORM_NOK
+from place.static.webform import LANDING, FORM_OK, FORM_NOK, USER_STATS, ACCOUNT_LINE
+
+@dataclass
+class TaskImage:
+	id : str
+	x : int
+	y : int
+	file : str
+	arr : Optional[np.ndarray] = None
+
+	def load(self) -> 'TaskImage':
+		self.arr = np.loadtxt(self.file, dtype="int32")
+		return self
+
+	def __str__(self) -> str:
+		return f"TaskImage({self.id} - [{self.file}] @ {self.x}, {self.y})"
 
 class RefreshableOAuth2Service(OAuth2Service):
 	def get_access_token(self,
@@ -33,7 +50,8 @@ class RefreshableOAuth2Service(OAuth2Service):
 		return access_token, refresh_token
 
 DISPATCHER_MAX_SLEEP = 60
-MAP_UPDATE_INTERVAL = 15 #Will request a map update every MAP_UPDATE_INTERVAL seconds
+MAP_UPDATE_INTERVAL = 20 #Will request a map update every MAP_UPDATE_INTERVAL seconds
+USER_AGENT = "python:placepoop:1.0 (by /u/Exact_Worldliness265)"
 CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
 CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
 REDIRECT_URI = "https://pooblic.org/place"
@@ -69,65 +87,86 @@ async def landing():
 					code=code,
 					redirect_uri=REDIRECT_URI
 				),
-				headers={'User-Agent': 'python:placepoop:1.0 (by /u/Exact_Worldliness265)'},
+				headers={'User-Agent': USER_AGENT},
 				decoder=json.loads				
 			)
 			u = User(str(uuid4()), access_token, refresh_token)
+			await u.get_username()
 			POOL.add_user(u)
 			logging.info("received user from web app : %s", u)
-			return FORM_OK
+			return FORM_OK.format(userid=u.id)
 		except KeyError as e:
 			logging.warning("failed to get access token : %s", str(e))
 			return FORM_NOK
 	else:
-		return LANDING.format(users=len(POOL))
+		return LANDING.format(users=len(POOL), ready=POOL.ready)
 
 @APP.route("/auth", methods=["GET"])
 async def auth_url():
-		# return LANDING
-		authorize_url = CLIENT.get_authorize_url(
-			response_type="code",
-			scope="identity",
-			state=str(uuid4()),
-			redirect_uri=REDIRECT_URI,
-			duration='permanent',
-		)
-		return redirect(authorize_url)
+	# return LANDING
+	authorize_url = CLIENT.get_authorize_url(
+		response_type="code",
+		scope="identity",
+		state=str(uuid4()),
+		redirect_uri=REDIRECT_URI,
+		duration='permanent',
+	)
+	return redirect(authorize_url)
 
-async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap) -> int:
-	size = pixels.shape
+@APP.route("/stats", methods=["GET"])
+async def stats_url():
+	accounts = []
+	sorted_users = sorted(list(POOL.users), key=lambda u: u.cooldown)
+	for u in sorted_users:
+		accounts.append(ACCOUNT_LINE.format(name=u.id, cooldown=u.cooldown))
+	return USER_STATS.format(accounts=str.join('', accounts))
+
+def load_pictures(fname:str) -> List[TaskImage]:
+	out : List[TaskImage] = list()
+	with open(fname) as f:
+		pictures = json.load(f)
+	for pic in pictures:
+		out.append(TaskImage(**pic).load())
+		logger.debug("Loaded picture %s", out[-1])
+	return out	
+
+
+async def process_board(users: Pool, pixels: List[TaskImage], board: PixelMap) -> int:
 	count = 0
-	for px in range(size[1]):
-		for py in range(size[0]):
-			if pixels[py][px] == -1:
-				continue
-			if board[oY + py][oX + px] != pixels[py][px]:
-				logger.debug(f"comparing {oX+px}, {oY+py} with {px}, {py}")
-			# get shortest cooldown in pool
-				usr = users.best()
-				if usr.cooldown > 0:
-					return count
-				# try to fill this pixel
-				try:
-					if await usr.put(pixels[py][px], oX + px, oY + py):
-						count += 1
-				except UnauthorizedError as e:
-					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
-					if e.refreshable:
-						try:
-							await usr.refresh_token()
-							POOL.serialize()
-						except Exception:
-							# logger.debug(e) # non serve: logger.exception mostra proprio la stacktrace
-							logger.exception("Failed to refresh user %s", usr)
+	for img in pixels:
+		logger.info("working on image %s", str(img))
+		size = img.arr.shape
+		for px in range(size[1]):
+			for py in range(size[0]):
+				if img.arr[py][px] == -1:
+					continue
+				if board[img.y + py][img.x + px] != img.arr[py][px]:
+					logger.debug(f"comparing {img.x+px}, {img.y+py} with {px}, {py}")
+				# get shortest cooldown in pool
+					usr = users.best()
+					if usr.cooldown > 0:
+						return count
+					# try to fill this pixel
+					try:
+						if await usr.put(img.arr[py][px], img.x + px, img.y + py):
+							count += 1
+					except UnauthorizedError as e:
+						logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
+						if e.refreshable:
+							try:
+								await usr.refresh_token()
+								POOL.serialize()
+							except Exception:
+								# logger.debug(e) # non serve: logger.exception mostra proprio la stacktrace
+								logger.exception("Failed to refresh user %s", usr)
+								users.remove_user(usr.name)
+						else:
+							logger.error("user ratelimited into oblivion: %s", usr)
 							users.remove_user(usr.name)
-					else:
-						logger.error("user ratelimited into oblivion: %s", usr)
-						users.remove_user(usr.name)
-					return count
+						return count
 	return count
 
-async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
+async def run(users: Pool, pixels: List[TaskImage], board: PixelMap):
 	last_sync = 0.0
 	while True:
 		try:
@@ -160,7 +199,7 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 						users.remove_user(usr.name)
 					continue
 				last_sync = time()
-			modified = await process_board(users, pixels, oX, oY, board)
+			modified = await process_board(users, pixels, board)
 			POOL.serialize()
 			logger.info("changed %d pixels", modified)
 			if modified <= 0:
@@ -216,36 +255,15 @@ def setup_logging(name:str, color:bool=True, level=INFO) -> None:
 	logger.addHandler(fh)
 	logger.addHandler(ch)
 
-def main(offsetX:int, offsetY:int):
+def main():
 	board = PixelMap()		
-	pixels = np.loadtxt("input.txt", dtype='int32') # TODO invert x and y
+	pixels = load_pictures(sys.argv[1] if len(sys.argv) > 1 else "input.json")
 	loop = asyncio.get_event_loop()
-	board_task = loop.create_task(run(POOL, pixels, offsetX, offsetY, board))
+	board_task = loop.create_task(run(POOL, pixels, board))
 	# users_task = loop.create_task(gen_users(POOL))
 	APP.run(host="127.0.0.1", port=52691, loop=loop, use_reloader=False)
 
 if __name__ == "__main__":
-	import sys
-	import os.path
 	setup_logging("pooblic-placebot", level=DEBUG)
-	if len(sys.argv) != 3:
-		print("Arguments were not provided or they were invalid.")
-		print("You are required to specify the position of the top-left corner of your image on the canvas.")
-		while True:
-			try:
-				offsetX = int(input("Input x:"))
-				offsetY = int(input("Input y:"))
-			except ValueError:
-				logging.error("Not a number, please try again.")
-				continue
-			break
-	else:
-		offsetX = int(sys.argv[1])
-		offsetY = int(sys.argv[2])
-	while True:
-		if not os.path.exists("input.txt"):
-			logging.error("Could not find input.txt. Create a valid one, then press ENTER.")
-			input()
-		else:
-			break
-	main(offsetX, offsetY)
+
+	main()
