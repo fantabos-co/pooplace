@@ -51,7 +51,7 @@ class User:
 	def __str__(self):
 		return json.dumps(self.as_dict())
 
-	async def refresh(self):
+	async def refresh_token(self):
 		if not self.refresh or self.refresh == "null": # TODO remove literal 'null'
 			raise UnauthorizedError("No refresh token")
 		async with aiohttp.ClientSession() as sess:

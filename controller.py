@@ -116,7 +116,7 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 				except UnauthorizedError as e:
 					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
 					try:
-						await usr.refresh()
+						await usr.refresh_token()
 						POOL.serialize()
 					except Exception:
 						logger.exception("Failed to refresh user %s", usr)
@@ -145,7 +145,7 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 				except UnauthorizedError as e:
 					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
 					try:
-						await usr.refresh()
+						await usr.refresh_token()
 						POOL.serialize()
 					except Exception:
 						logger.exception("Failed to refresh user %s", usr)
