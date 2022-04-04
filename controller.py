@@ -209,20 +209,36 @@ def setup_logging(name:str, color:bool=True, level=INFO) -> None:
 	logger.addHandler(fh)
 	logger.addHandler(ch)
 
-if __name__ == "__main__":
-	import logging
-	import sys
-
-	setup_logging("pooblic-placebot", level=DEBUG)
-
-	board = PixelMap()
+def main(offsetX:int, offsetY:int):
+	board = PixelMap()		
 	pixels = np.loadtxt("input.txt", dtype='int32') # TODO invert x and y
-	offsetX = int(sys.argv[1])
-	offsetY = int(sys.argv[2])
-
 	loop = asyncio.get_event_loop()
-
 	board_task = loop.create_task(run(POOL, pixels, offsetX, offsetY, board))
 	# users_task = loop.create_task(gen_users(POOL))
-
 	APP.run(host="127.0.0.1", port=52691, loop=loop, use_reloader=False)
+
+if __name__ == "__main__":
+	import sys
+	import os.path
+	setup_logging("pooblic-placebot", level=DEBUG)
+	if len(sys.argv) != 3:
+		print("Arguments were not provided or they were invalid.")
+		print("You are required to specify the position of the top-left corner of your image on the canvas.")
+		while True:
+			try:
+				offsetX = int(input("Input x:"))
+				offsetY = int(input("Input y:"))
+			except ValueError:
+				logging.error("Not a number, please try again.")
+				continue
+			break
+	else:
+		offsetX = int(sys.argv[1])
+		offsetY = int(sys.argv[2])
+	while True:
+		if not os.path.exists("input.txt"):
+			logging.error("Could not find input.txt. Create a valid one, then press ENTER.")
+			input()
+		else:
+			break
+	main(offsetX, offsetY)
