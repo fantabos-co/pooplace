@@ -34,7 +34,7 @@ class User:
 		refresh:Optional[str] = None,
 		next:Optional[int] = None,
 	):
-		self.logger = logging.getLogger("user({username})")
+		self.logger = logging.getLogger(f"user({name})")
 		self.name = name
 		self.token = token
 		self.refresh = refresh
@@ -109,7 +109,7 @@ class User:
 		return (self.next or 0) - time()
 
 	async def put(self, color:int, x:int, y:int) -> bool:
-		self.logger.info("putting [%d] at %d|%d", color, x, y)
+		self.logger.info("putting [%s] at %d|%d", RedditColor(color), x, y)
 		async with aiohttp.ClientSession() as sess:
 			async with sess.post(self.URL, headers=self.headers, data=get_payload(x=x, y=y, c=color)) as res:
 				answ = await res.json()

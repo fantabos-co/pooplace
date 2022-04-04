@@ -2,6 +2,11 @@ import asyncio
 import logging
 import numpy as np
 
+from logging import StreamHandler, getLogger, Formatter, LogRecord, DEBUG, INFO, WARNING, ERROR, CRITICAL
+from logging.handlers import RotatingFileHandler
+from termcolor import colored
+
+from typing import Dict
 from time import time
 from uuid import uuid4
 import json
@@ -11,6 +16,7 @@ import rauth
 from rauth.service import OAuth2Service, process_token_request
 from aioconsole import ainput
 from quart import Quart, request, redirect
+from quart.logging import default_handler, serving_handler
 
 from place.board import PixelMap
 from place.user import Pool, UnauthorizedError, User
@@ -44,6 +50,9 @@ logger = logging.getLogger(__file__)
 
 APP = Quart(__name__)
 POOL = Pool()
+
+logging.getLogger('quart.app').removeHandler(default_handler)
+logging.getLogger('quart.app').removeHandler(serving_handler)
 
 @APP.route("/", methods=["GET"])
 async def landing():
@@ -161,15 +170,49 @@ async def gen_users(users: Pool):
 
 		users.add_user(User(name, token))
 
+
+class ColorFormatter(Formatter):
+	def __init__(self, fmt:str):
+		self.fmt : str = fmt
+		self.formatters : Dict[int, Formatter] = {
+			DEBUG: Formatter(colored(fmt, color='grey')),
+			INFO: Formatter(colored(fmt)),
+			WARNING: Formatter(colored(fmt, color='yellow')),
+			ERROR: Formatter(colored(fmt, color='red')),
+			CRITICAL: Formatter(colored(fmt, color='red', attrs=['bold'])),
+		}
+
+	def format(self, record:LogRecord) -> str:
+		if record.exc_text: # jank way to color the stacktrace but will do for now
+			record.exc_text = colored(record.exc_text, color='grey', attrs=['bold'])
+		fmt = self.formatters.get(record.levelno)
+		if fmt:
+			return fmt.format(record)
+		return Formatter().format(record) # This should never happen!
+
+def setup_logging(name:str, color:bool=True, level=INFO) -> None:
+	logger = getLogger()
+	logger.setLevel(level)
+	# create file handler which logs even debug messages
+	fh = RotatingFileHandler(f'log/{name}.log', maxBytes=1048576, backupCount=5) # 1MB files
+	fh.setLevel(level)
+	# create console handler with a higher log level
+	ch = StreamHandler()
+	ch.setLevel(max(INFO, level)) # so we never show DEBUG on stdout
+	# create formatter and add it to the handlers
+	file_formatter = Formatter("[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", "%b %d %Y %H:%M:%S")
+	print_formatter = ColorFormatter("> %(message)s") if color else Formatter("> %(message)s")
+	fh.setFormatter(file_formatter)
+	ch.setFormatter(print_formatter)
+	# add the handlers to the logger
+	logger.addHandler(fh)
+	logger.addHandler(ch)
+
 if __name__ == "__main__":
 	import logging
 	import sys
-	logging.basicConfig(level=logging.DEBUG)
 
-	print(CLIENT.get_authorize_url(
-		scopes=['identity'],
-		state="ifthereisafloodofnewplayers",
-	))
+	setup_logging("pooblic-placebot", level=DEBUG)
 
 	board = PixelMap()
 	pixels = np.loadtxt("input.txt", dtype='int32') # TODO invert x and y
@@ -179,6 +222,6 @@ if __name__ == "__main__":
 	loop = asyncio.get_event_loop()
 
 	board_task = loop.create_task(run(POOL, pixels, offsetX, offsetY, board))
-	users_task = loop.create_task(gen_users(POOL))
+	# users_task = loop.create_task(gen_users(POOL))
 
 	APP.run(host="127.0.0.1", port=52691, loop=loop, use_reloader=False)
