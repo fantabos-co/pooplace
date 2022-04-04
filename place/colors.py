@@ -96,6 +96,20 @@ class RedditColor(Enum):
 				color_distance = color_diff
 				closest_color = color
 		return closest_color
+	
+	@classmethod
+	def closest_color(
+		cls, target_rgb: tuple, rgb_colors_array: list
+	):
+		"""Find the closest rgb color from palette to a target rgb color, as well as handling transparency"""
+
+		r, g, b = target_rgb[:3]
+		color_diffs = []
+		for color in rgb_colors_array:
+			cr, cg, cb = color
+			color_diff = math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2)
+			color_diffs.append((color_diff, color))
+		return min(color_diffs)[1]
 
 	def to_tuple(self):
 		return _color_map[self.value]

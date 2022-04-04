@@ -1,8 +1,5 @@
 import os
 import aiohttp
-from praw import reddit
-from aioauth_client import OAuth2Client
-import rauth
 import json
 from time import time
 from typing import List, Optional
