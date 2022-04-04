@@ -15,6 +15,8 @@ def get_payload(x:int, y:int, c:int):
 	return """{"operationName":"setPixel","variables":{"input":{"actionName":"r/replace:set_pixel","PixelMessageData":{"coordinate":{"x":%d,"y":%d},"colorIndex":%d,"canvasIndex":%d}}},"query":"mutation setPixel($input: ActInput!) {\\n act(input: $input) {\\n data {\\n ... on BasicMessage {\\n id\\n data {\\n ... on GetUserCooldownResponseMessageData {\\n nextAvailablePixelTimestamp\\n __typename\\n }\\n ... on SetPixelResponseMessageData {\\n timestamp\\n __typename\\n }\\n __typename\\n }\\n __typename\\n }\\n __typename\\n }\\n __typename\\n }\\n}\\n"}""" % (x, y, c, 0)
 
 _ALL_SCOPES = ["account", "creddits", "edit", "flair", "history", "identity", "livemanage", "modconfig", "modcontributors", "modflair", "modlog", "modmail", "modnote", "modothers", "modposts", "modself", "modwiki", "mysubreddits", "privatemessages", "read", "report", "save", "structuredstyles", "submit", "subscribe", "vote", "wikiedit", "wikiread"]
+CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
+CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
 
 class UnauthorizedError(Exception):
 	pass
@@ -57,9 +59,12 @@ class User:
 		async with aiohttp.ClientSession() as sess:
 			async with sess.post(
 				"https://www.reddit.com/api/v1/access_token",
-				data={"grant_type":"refresh_token", "refresh_token":self.refresh}
+				data=f"grant_type=refresh_token&refresh_token={self.refresh}".encode('utf-8'),
+				headers={'User-Agent': 'python:placepoop:1.0 (by /u/Exact_Worldliness265)'},
+				auth=aiohttp.BasicAuth(login=CLIENT_ID, password=CLIENT_SECRET),
 			) as res:
 				data = await res.json()
+				self.logger.debug(str(data))
 				self.token = data['access_token']
 
 	@classmethod
@@ -165,12 +170,10 @@ class Pool:
 		return any(u.cooldown <= 0 for u in self)
 
 	def best(self) -> User:
-		"""Returns the user with the shortest cooldown (or no cooldown at all)"""
+		"""Returns the user with the shortest cooldown"""
 		cd = None
 		usr = None
 		for u in self:
-			if u.cooldown <= 0:
-				return u
 			if cd is None or u.cooldown < cd:
 				cd = u.cooldown
 				usr = u
