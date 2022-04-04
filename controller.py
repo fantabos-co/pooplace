@@ -32,8 +32,8 @@ class RefreshableOAuth2Service(OAuth2Service):
 		access_token, refresh_token = process_token_request(r, decoder, *(key or ["access_token", "refresh_token"]))
 		return access_token, refresh_token
 
-DISPATCHER_MAX_SLEEP = 30
-MAP_UPDATE_INTERVAL = 10 #Will request a map update every MAP_UPDATE_INTERVAL seconds
+DISPATCHER_MAX_SLEEP = 60
+MAP_UPDATE_INTERVAL = 15 #Will request a map update every MAP_UPDATE_INTERVAL seconds
 CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
 CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
 REDIRECT_URI = "https://pooblic.org/place"
@@ -156,7 +156,7 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 			POOL.serialize()
 			logger.info("changed %d pixels", modified)
 			if modified <= 0:
-				await asyncio.sleep(1) #sleep for 1 second if nothing happened
+				await asyncio.sleep(MAP_UPDATE_INTERVAL - (time() - last_sync)) #sleep for 1 second if nothing happened
 		except Exception:
 			logger.exception("uncaught exception")
 			await asyncio.sleep(5)
