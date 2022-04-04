@@ -37,10 +37,9 @@ class PixelMap:
 			)
 		)
 		data = json.loads(ws.recv())
-		self.logger.debug(data)
+		self.logger.debug(str(data))
 		if 'payload' in data and data['payload']['message'].startswith('401'):
 			raise UnauthorizedError(str(data))
-			#https://jsonformatter.org/graphql-formatter
 
 		ws.send(
 			json.dumps(

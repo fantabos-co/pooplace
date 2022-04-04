@@ -55,18 +55,23 @@ class User:
 
 	async def refresh_token(self):
 		if not self.refresh or self.refresh == "null": # TODO remove literal 'null'
+			self.logger.debug("could not fine refresh token for %s", self.name)
 			raise UnauthorizedError("No refresh token")
+		gayson = {
+			'grant_type': 'refresh_token',
+			'refresh_token': self.refresh
+		}
 		async with aiohttp.ClientSession() as sess:
 			async with sess.post(
 				"https://www.reddit.com/api/v1/access_token",
-				data=f"grant_type=refresh_token&refresh_token={self.refresh}".encode('utf-8'),
+				#data=f"grant_type=refresh_token&refresh_token={self.refresh}".encode('utf-8'),
+				data=gayson,
 				headers={'User-Agent': 'python:placepoop:1.0 (by /u/Exact_Worldliness265)'},
 				auth=aiohttp.BasicAuth(login=CLIENT_ID, password=CLIENT_SECRET),
 			) as res:
 				data = await res.json()
-				self.logger.debug(str(data))
+				self.logger.debug(data)
 				self.token = data['access_token']
-
 	@classmethod
 	async def manual_login(
 		cls,

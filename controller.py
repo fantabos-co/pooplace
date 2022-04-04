@@ -118,7 +118,8 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 					try:
 						await usr.refresh_token()
 						POOL.serialize()
-					except Exception:
+					except Exception as e:
+						logger.debug(e)
 						logger.exception("Failed to refresh user %s", usr)
 						users.remove_user(usr.name)
 					return count
@@ -149,7 +150,7 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 						POOL.serialize()
 					except Exception:
 						logger.exception("Failed to refresh user %s", usr)
-						users.remove_user(usr.name)
+						#users.remove_user(usr.name)
 						continue
 				last_sync = time()
 			modified = await process_board(users, pixels, oX, oY, board)
