@@ -13,7 +13,7 @@ from quart import Quart, request, redirect
 
 from place.board import PixelMap
 from place.user import Pool, UnauthorizedError, User
-from place.webform import LANDING, FORM_OK, FORM_NOK
+from place.static.webform import LANDING, FORM_OK, FORM_NOK
 
 DISPATCHER_MAX_SLEEP = 30
 MAP_UPDATE_INTERVAL = 10 #Will request a map update every MAP_UPDATE_INTERVAL seconds
@@ -37,7 +37,7 @@ POOL = Pool()
 @APP.route("/", methods=["GET"])
 async def landing():
 	if 'code' in request.args:
-		user = "unk" #TODO fetch acc name	
+		# user = "unk" #TODO fetch acc name	
 		# when user is redirected back after authorizing:
 		code = request.args["code"]
 		try:
@@ -53,8 +53,8 @@ async def landing():
 			)
 			logger.info(str(response))
 			#token = response.access_token
-			POOL.add_user(User(user, response))
-			logging.info("received user from web app : %s", user)
+			POOL.add_user(User(response, response))
+			logging.info("received user from web app : %s", response)
 			return FORM_OK
 		except KeyError as e:
 			if "response" in locals():
@@ -62,6 +62,10 @@ async def landing():
 			logging.warning("failed to get access token : %s", str(e))
 			return FORM_NOK
 	else:
+		return LANDING.format(users=len(POOL))
+
+@APP.route("/auth", methods=["GET"])
+async def auth_url():
 		# return LANDING
 		authorize_url = CLIENT.get_authorize_url(
 			response_type="code",
@@ -71,37 +75,6 @@ async def landing():
 			duration='permanent',
 		)
 		return redirect(authorize_url)
-
-@APP.route("/", methods=["POST"])
-async def form_data():
-	if 'code' in request.args:
-		user = "unk"	
-		# when user is redirected back after authorizing:
-		code = request.args["code"]
-		try:
-			response = CLIENT.get_access_token(
-				auth=(CLIENT.client_id, CLIENT.client_secret),
-				data=dict(
-					grant_type="authorization_code",
-					code=code,
-					redirect_uri=REDIRECT_URI
-				),
-				headers={'User-Agent': 'python:pooplace:1.0 (by /u/Exact_Worldliness562)'},
-				decoder=json.loads
-			)
-			logger.debug(str(response))
-		except KeyError as e:
-			logger.debug(str(response))
-			logger.error("error getting access token : %s", str(e))
-			return FORM_NOK
-	else:
-		form = await request.form
-		user = form['username']
-		token = form['token']
-
-	POOL.add_user(User(user, response))
-	logging.info("received user from web app : %s", user)
-	return FORM_OK
 
 async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap) -> int:
 	size = pixels.shape
@@ -149,6 +122,7 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 				continue
 			last_sync = time()
 		modified = await process_board(users, pixels, oX, oY, board)
+		POOL.serialize()
 		logger.info("changed %d pixels", modified)
 		if modified <= 0:
 			await asyncio.sleep(1) #sleep for 1 second if nothing happened

@@ -23,7 +23,7 @@ class User:
 	name : str
 	token : str
 	refresh : Optional[str]
-	_next_time : int
+	next : Optional[int]
 
 	URL = "https://gql-realtime-2.reddit.com/query"
 
@@ -31,16 +31,22 @@ class User:
 		self,
 		name:str,
 		token:str,
-		refresh:Optional[str] = None
+		refresh:Optional[str] = None,
+		next:Optional[int] = None,
 	):
 		self.logger = logging.getLogger("user({username})")
 		self.name = name
 		self.token = token
 		self.refresh = refresh
-		self._next_time = 0
+		self.next = next
 
 	def as_dict(self):
-		return {"name": self.name, "token": self.token, "refresh": self.refresh or "null"}
+		return {
+			"name": self.name,
+			"token": self.token,
+			"refresh": self.refresh or "null",
+			"next": self.next or "null"
+		}
 
 	def __str__(self):
 		return json.dumps(self.as_dict())
@@ -89,7 +95,7 @@ class User:
 	
 	@property
 	def cooldown(self):
-		return self._next_time - time()
+		return (self.next or 0) - time()
 
 	async def put(self, color:int, x:int, y:int) -> bool:
 		self.logger.info("putting [%d] at %d|%d", color, x, y)
@@ -104,13 +110,13 @@ class User:
 		if "data" in answ and answ['data']:
 			for act in answ["data"]["act"]["data"]:
 				if "nextAvailablePixelTimestamp" in act['data']:
-					self._next_time = act['data']['nextAvailablePixelTimestamp'] / 1000
+					self.next = act['data']['nextAvailablePixelTimestamp'] / 1000
 					return True
 		if "errors" in answ and answ['errors']:
 			for err in answ['errors']:
 				if 'extensions' in err:
 					if 'nextAvailablePixelTs' in err['extensions']:
-						self._next_time = err['extensions']['nextAvailablePixelTs'] / 1000
+						self.next = err['extensions']['nextAvailablePixelTs'] / 1000
 						return False
 
 class Pool:
@@ -122,7 +128,14 @@ class Pool:
 			with open(storage) as f:
 				data = json.load(f)
 			for el in data:
-				self.users.append(User(el["name"], el["token"]))
+				self.users.append(
+					User(
+						el["name"],
+						el["token"],
+						el["refresh"] if "refresh" in el else None,
+						el["next"] if "next" in el else None,
+					)
+				)
 
 	def __iter__(self):
 		return iter(self.users)
