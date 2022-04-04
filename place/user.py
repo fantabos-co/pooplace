@@ -51,6 +51,17 @@ class User:
 	def __str__(self):
 		return json.dumps(self.as_dict())
 
+	async def refresh(self):
+		if not self.refresh or self.refresh == "null": # TODO remove literal 'null'
+			raise UnauthorizedError("No refresh token")
+		async with aiohttp.ClientSession() as sess:
+			async with sess.post(
+				"https://www.reddit.com/api/v1/access_token",
+				data={"grant_type":"refresh_token", "refresh_token":self.refresh}
+			) as res:
+				data = await res.json()
+				self.token = data['access_token']
+
 	@classmethod
 	async def manual_login(
 		cls,
@@ -111,6 +122,8 @@ class User:
 			for act in answ["data"]["act"]["data"]:
 				if "nextAvailablePixelTimestamp" in act['data']:
 					self.next = act['data']['nextAvailablePixelTimestamp'] / 1000
+					if self.next - time() > 60 * 60 * 24 * 31:
+						raise UnauthorizedError("Rate limited: cooldown too long")
 					return True
 		if "errors" in answ and answ['errors']:
 			for err in answ['errors']:
@@ -132,8 +145,8 @@ class Pool:
 					User(
 						el["name"],
 						el["token"],
-						el["refresh"] if "refresh" in el else None,
-						el["next"] if "next" in el else None,
+						el["refresh"] if "refresh" in el and el["refresh"] != "null" else None,
+						el["next"] if "next" in el and el["next"] != "null" else None,
 					)
 				)
 

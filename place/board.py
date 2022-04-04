@@ -40,7 +40,8 @@ class PixelMap:
 		self.logger.debug(data)
 		if 'payload' in data and data['payload']['message'].startswith('401'):
 			raise UnauthorizedError(str(data))
-			#https://github.com/rdeepak2002/reddit-place-script-2022/blob/932a8039d863f53082e113f6bb18c3214082952b/main.py#L296
+			#https://jsonformatter.org/graphql-formatter
+
 		ws.send(
 			json.dumps(
 				{
@@ -62,9 +63,12 @@ class PixelMap:
 				}
 			)
 		)
-		data = json.loads(ws.recv())
-		self.logger.debug(data)
-		if 'payload' in data and data['payload']['message'].startswith('401'):
+		try:
+			data = json.loads(ws.recv())
+			self.logger.debug(data)
+			if 'payload' in data and data['payload']['message'].startswith('401'):
+				raise UnauthorizedError(str(data))
+		except json.decoder.JSONDecodeError:
 			raise UnauthorizedError(str(data))
 		ws.send(
 			json.dumps(
