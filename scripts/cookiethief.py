@@ -4,6 +4,7 @@ import jwt
 import json
 
 def get_token() -> str():
+	"""Simple function that returns the Reddit bearer token stored in a browser of your choice."""
 	print("How it works:")
 	print("Log in to reddit from your preferred browser. This will look through your cookies and get the token needed to access it.")
 	print("You can verify that the source is harmless yourself, but use a throwaway account if it makes you feel safer.")

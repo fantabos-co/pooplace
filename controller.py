@@ -56,14 +56,12 @@ logging.getLogger('quart.app').removeHandler(serving_handler)
 
 @APP.route("/", methods=["GET"])
 async def landing():
+	"""Handles requests to the defined return URI."""
 	if 'code' in request.args:
 		# user = "unk" #TODO fetch acc name	
 		# when user is redirected back after authorizing:
 		code = request.args["code"]
 		try:
-			# session = CLIENT.get_auth_session(data={"code":code, "grant_type":"authorization_code", "redirect_uri":REDIRECT_URI})
-			# response = session.access_token
-			# sess
 			access_token, refresh_token = CLIENT.get_access_token(
 				auth=(CLIENT.client_id, CLIENT.client_secret),
 				data=dict(
@@ -115,18 +113,22 @@ async def process_board(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: 
 						count += 1
 				except UnauthorizedError as e:
 					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
-					try:
-						await usr.refresh_token()
-						POOL.serialize()
-					except Exception as e:
-						logger.debug(e)
-						logger.exception("Failed to refresh user %s", usr)
+					if e.refreshable:
+						try:
+							await usr.refresh_token()
+							POOL.serialize()
+						except Exception:
+							# logger.debug(e) # non serve: logger.exception mostra proprio la stacktrace
+							logger.exception("Failed to refresh user %s", usr)
+							users.remove_user(usr.name)
+					else:
+						logger.error("user ratelimited into oblivion: %s", usr)
 						users.remove_user(usr.name)
 					return count
 	return count
 
 async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
-	last_sync = 0
+	last_sync = 0.0
 	while True:
 		try:
 			if len(users) <= 0:
@@ -145,13 +147,18 @@ async def run(users: Pool, pixels: np.ndarray, oX:int, oY:int, board: PixelMap):
 					await board.fetch(usr.token) #doesnt matter whose token we use
 				except UnauthorizedError as e:
 					logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
-					try:
-						await usr.refresh_token()
-						POOL.serialize()
-					except Exception:
-						logger.exception("Failed to refresh user %s", usr)
-						#users.remove_user(usr.name)
-						continue
+					if e.refreshable:
+						try:
+							await usr.refresh_token()
+							POOL.serialize()
+						except Exception:
+							# logger.debug(e) # non serve: logger.exception mostra proprio la stacktrace
+							logger.exception("Failed to refresh user %s", usr)
+							users.remove_user(usr.name)
+					else:
+						logger.error("user ratelimited into oblivion: %s", usr)
+						users.remove_user(usr.name)
+					continue
 				last_sync = time()
 			modified = await process_board(users, pixels, oX, oY, board)
 			POOL.serialize()

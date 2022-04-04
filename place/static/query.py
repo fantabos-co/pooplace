@@ -1,5 +1,4 @@
-a = """
-subscription configuration($input: SubscribeInput!) {
+CFG_QUERY = """subscription configuration($input: SubscribeInput!) {
   subscribe(input: $input) {
     id
     ... on BasicMessage {
@@ -31,7 +30,7 @@ subscription configuration($input: SubscribeInput!) {
   }
 }
 """
-b = """subscription replace($input: SubscribeInput!) {
+REP_QUERY = """subscription replace($input: SubscribeInput!) {
   subscribe(input: $input) {
     id
     ... on BasicMessage {

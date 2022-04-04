@@ -1,7 +1,7 @@
 import os
 import aiohttp
 from praw import reddit
-from aioauth_client import OAuth2Client #https://aliev.me/aioauth
+from aioauth_client import OAuth2Client
 import rauth
 import json
 from time import time
@@ -19,7 +19,10 @@ CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
 CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
 
 class UnauthorizedError(Exception):
-	pass
+	refreshable : bool
+	def __init__(self, message:str, refreshable:bool=True):
+		super().__init__(message)
+		self.refreshable = refreshable
 
 class User:
 	name : str
@@ -72,6 +75,8 @@ class User:
 				data = await res.json()
 				self.logger.debug(data)
 				self.token = data['access_token']
+		self.logger.info(f"refreshed user {self.name}")
+		
 	@classmethod
 	async def manual_login(
 		cls,
@@ -98,7 +103,6 @@ class User:
 			"manual",
 			token,
 		)
-
 
 	@property
 	def headers(self):
@@ -132,14 +136,16 @@ class User:
 			for act in answ["data"]["act"]["data"]:
 				if "nextAvailablePixelTimestamp" in act['data']:
 					self.next = act['data']['nextAvailablePixelTimestamp'] / 1000
-					if self.next - time() > 60 * 60 * 24 * 31:
-						raise UnauthorizedError("Rate limited: cooldown too long")
+					if self.next and self.next - time() > 60 * 60 * 24 * 31:
+						raise UnauthorizedError("Rate limited: cooldown too long", refreshable=False)
 					return True
 		if "errors" in answ and answ['errors']:
 			for err in answ['errors']:
 				if 'extensions' in err:
 					if 'nextAvailablePixelTs' in err['extensions']:
 						self.next = err['extensions']['nextAvailablePixelTs'] / 1000
+						if self.next and self.next - time() > 60 * 60 * 24 * 31:
+							raise UnauthorizedError("Rate limited: cooldown too long", refreshable=False)
 						return False
 
 class Pool:
