@@ -1,6 +1,4 @@
-# placebot
-ensures the racist cube logo stays up forever in r/place
-
+# pooplace
 proper readme eventually
 
 https://github.com/ItCameFr0mMars/RedditBotMaker may help
