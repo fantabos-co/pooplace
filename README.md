@@ -10,7 +10,7 @@ In order to use this, you will have to *at least* set the constants in <code>con
 What this code does is essentially create a centralized """botnet""" people can easily add bots to contribute to placing (or maintaining) one or more pictures. The bot will prioritize them in the order they are provided to it. You can specify a json input file via command line arguments, but by default it will try to read "input.json", placed in the same folder as controller.py. The JSON should look like this:
 
 	[
-    		{
+    	{
 			"id": "9b9t",
 			"file": "images/9b9t.txt",
 			"x": 185,
@@ -21,7 +21,7 @@ What this code does is essentially create a centralized """botnet""" people can 
 			"file": "images/hs.txt",
 			"x": 217,
 			"y": 125
-		},
+		}
 	]
 
 where <code>id</code> is a unique name for the element, <code>file</code> is the path to a txt matrix containing reddit numbers (more on that in a bit) and <code>x</code>, <code>y</code> are the absolute coordinates of the top left corner.
