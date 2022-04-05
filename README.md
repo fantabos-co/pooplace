@@ -1,5 +1,5 @@
 # PooPlace
-PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://github.com/realfraze) and [Tonio_Cartonio](https://github.com/tonio-cartonio) came up with ([Lupo_Lucio](https://github.com/lupo-lucio) is a shared account we both push from) to place pixels at the 2022 Reddit r/place event. It is unfinished, and the code is in dire need of a cleanup, but in the meantime, you can skim through it.
+PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://github.com/realfraze) and [Tonio_Cartonio](https://github.com/tonio-cartonio) came up with ([Lupo_Lucio](https://github.com/lupo-lucio) is a shared account we both push from) to place pixels at the 2022 Reddit r/place event. It is unfinished and in dire need of a cleanup but, in the meantime, you can skim through it.
 
 I have no idea of what Python versions it is compatible with. We wrote it with Python 3.8.10, so you can assume that all versions from there and up are compatible. All packages needed for this *should* be specified in requirements.txt.
 
@@ -32,19 +32,19 @@ The matrix is essentially a list of numbers: those are "reddit numbers", and it'
 
 The bot will then boot up and, if everything is set up, it will await until it is fed some users. We had a web interface set up on [my website](https://pooblic.org/place) (you can see the "HTML" for it in <code>place/static/webform.py</code>) that would allow everyone and their grandma to feed more accounts to our botnet:
 
-![Here you can see the main page](https://cdn.pooblic.org/github/rplace1.png)
+<center>![Here you can see the main page](https://cdn.pooblic.org/github/rplace1.png)</center>
 
 Users would press "feed in an account", and they would be redirected to a reddit authorization page:
 
-![Wait, only identity?](https://cdn.pooblic.org/github/rplace2.png)
+<center>![Wait, only identity?](https://cdn.pooblic.org/github/rplace2.png)</center>
 
 ...yeah, the only scope we ask for is "identity". Apparently, authorizing an application, no matter what permissions it got, was enough for that application to place pixels in your name. Nice permissions, Reddit. After that, you would be redirected back to my website:
 
-![ID assignment](https://cdn.pooblic.org/github/rplace3.png)
+<center>![ID assignment](https://cdn.pooblic.org/github/rplace3.png)</center>
 
 You could use that id to read the "stats" page linked in the main hub. Truth be told, that stats page was a bit disappointing. We planned on implementing also a pixel placing counter, but we never got around to it. Instead, it was pretty much just a cooldown viewer:
 
-![Yea, sometimes reddit would give an unreasonable cooldown](https://cdn.pooblic.org/github/rplace4.png)
+<center>![Yea, sometimes reddit would give an unreasonable cooldown](https://cdn.pooblic.org/github/rplace4.png)</center>
 
 Our nginx configuration looked something like this:
 
