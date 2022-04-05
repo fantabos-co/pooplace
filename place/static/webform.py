@@ -23,7 +23,7 @@ LANDING = """
 	<div class="container-fluid d-flex justify-content-center align-items-center h-100">
 		<div class="col col-6 pt-2">
 			<div class="card">
-				<img class="card-img-top" src="https://cdn.pooblic.org/placelogo.png" alt="9b9t r/place logo">
+				<img class="card-img-top" src="https://cdn.pooblic.org/rplace/logo.png" alt="9b9t r/place logo">
 				<div class="card-body">
 					<h5 class="card-title">Donate a reddit throwaway</h5>
 					<p class="card-text">Share with us your throwaways to work on something bigger!</p>
@@ -61,7 +61,7 @@ FORM_OK = """
 	<div class="container-fluid d-flex justify-content-center align-items-center h-100">
 		<div class="col col-6 pt-2">
 			<div class="card">
-				<img class="card-img-top" src="https://cdn.pooblic.org/placelogo.png" alt="9b9t r/place logo">
+				<img class="card-img-top" src="https://cdn.pooblic.org/rplace/logo.png" alt="9b9t r/place logo">
 				<div class="card-body">
 					<h5 class="card-title">Success</h5>
 					<p>Your user id is <b>{userid}</b>. Use this to keep track of <a href="https://pooblic.org/place/stats">your cooldown</a>!</p>
@@ -89,7 +89,7 @@ FORM_NOK = """
 	<div class="container-fluid d-flex justify-content-center align-items-center h-100">
 		<div class="col col-6 pt-2">
 			<div class="card">
-				<img class="card-img-top" src="https://cdn.pooblic.org/placelogo.png" alt="9b9t r/place logo">
+				<img class="card-img-top" src="https://cdn.pooblic.org/rplace/logo.png" alt="9b9t r/place logo">
 				<div class="card-body">
 					<h5 class="card-title">Error</h5>
 					<p>Reddit might be rate limiting us, please give us some breath (like 5/10 mins)</p>
@@ -118,7 +118,7 @@ USER_STATS = """
 	<div class="container-fluid d-flex justify-content-center align-items-center h-100">
 		<div class="col col-6 pt-2">
 			<div class="card">
-				<img class="card-img-top" src="https://cdn.pooblic.org/placelogo.png" alt="9b9t r/place logo">
+				<img class="card-img-top" src="https://cdn.pooblic.org/rplace/logo.png" alt="9b9t r/place logo">
 				<div class="card-body">
 					<h5 class="card-title">Accounts:</h5>
 					<ul>{accounts}</ul>
