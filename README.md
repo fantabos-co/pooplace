@@ -3,7 +3,7 @@ PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://
 
 I have no idea of what Python versions it is compatible with. We wrote it with Python 3.8.10, so you can assume that all versions from there and up are compatible. All packages needed for this *should* be specified in requirements.txt.
 
-In order to use this, you will have to *at least* set the constants in <code>controller.py</code> (which is the main part of the script, the one you are supposed to run) and possibly adapt parts of the code. It's also entirely possible that you will have to adjust parts of the bot to your specific needs. This was never meant for mass use and is only provided "as is". It may work, it may not work, it may need some fixing. It did the trick for us, and it may or may not do it for you.
+In order to use this, you will have to *at least* set the constants in <code>controller.py</code> (which is the main part of the script, the one you are supposed to run) and possibly adapt parts of the code. It's also entirely possible that you will have to adjust parts of the bot to your specific needs. This was never meant for mass distribution and is only provided "as is". It may work, it may not work, it may need some fixing. It did the trick for us, and it may or may not do it for you.
 
 ## How it works
 
@@ -57,7 +57,7 @@ Our nginx configuration looked something like this:
 		proxy_pass http://127.0.0.1:PORT/;
 	}
 
-The bot goes column by column (due to an early bug we never bothered to fully fix, we originally meant to go row by row) in the designated areas, checking if the provided input matches the board. If it doesn't, it looks for an account within its pool and, if there is one without cooldown, it tries to place a pixel with it. If all are on cooldown, it should sleep for the necessary time. The bot will also automatically refresh the tokens, so they "presumable" never expire, and weed out accounts with a cooldown higher than 1 month (those that Reddit disabled, it can happen).
+The bot goes column by column (due to an early bug we never bothered to fully fix, we originally meant to go row by row) in the designated areas, checking if the provided input matches the board. If it doesn't, it looks for an account within its pool and, if there is one without cooldown, it tries to place a pixel with it. If all are on cooldown, it should sleep for the necessary time. The bot will also automatically refresh the tokens, so they "presumably" never expire, and weed out accounts with a cooldown higher than 1 month (those that Reddit disabled, it can happen).
 
 Implementing proxies, if anyone is up to the task, should speed it up considerably: Reddit seems to "ignore" some requests when it gets too many from the same IP within a single second. Despite this flaw, however, the bot is more than functional, if used correctly. It successfully defended the 9b9t logo and others and moved a pixel art in a reasonable time. We never really attacked with it, so I cannot vouch for its functionality in that sense. Only thing close to that was when, to test multiple picture support, we tried to draw a penis on 2b2t (yes, that was us). It probably would've lost against another bot, but the 2b2t community seemed to have a hard time beating it back. So, yeah, it is probably suitable for some smaller scale attacks.
 
