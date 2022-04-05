@@ -1,5 +1,5 @@
 # PooPlace
-PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://github.com/realfraze) and [Tonio_Cartonio](https://github.com/tonio-cartonio) came up with [Lupo_Lucio](https://github.com/lupo-lucio) is a shared account we both push from) to place pixels at the 2022 Reddit r/place event. It is unfinished, and the code is in dire need of a cleanup, but in the meantime, you can skim through it.
+PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://github.com/realfraze) and [Tonio_Cartonio](https://github.com/tonio-cartonio) came up with ([Lupo_Lucio](https://github.com/lupo-lucio) is a shared account we both push from) to place pixels at the 2022 Reddit r/place event. It is unfinished, and the code is in dire need of a cleanup, but in the meantime, you can skim through it.
 
 I have no idea of what Python versions it is compatible with. We wrote it with Python 3.8.10, so you can assume that all versions from there and up are compatible. All packages needed for this *should* be specified in requirements.txt.
 
