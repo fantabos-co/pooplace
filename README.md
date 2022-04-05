@@ -1,5 +1,5 @@
 # PooPlace
-PooPlace (how creative, I know) is the name we (I) gave to the bot (https://github.com/realfraze)[me] and (https://github.com/tonio-cartonio)[Tonio_Cartonio] came up with ([https://github.com/lupo-lucio](Lupo_Lucio) is a shared account we both push from) to place pixels at the 2022 Reddit r/place event. It is unfinished, and the code is in dire need of a cleanup, but in the meantime, you can skim through it.
+PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://github.com/realfraze) and [Tonio_Cartonio](https://github.com/tonio-cartonio) came up with [Lupo_Lucio](https://github.com/lupo-lucio) is a shared account we both push from) to place pixels at the 2022 Reddit r/place event. It is unfinished, and the code is in dire need of a cleanup, but in the meantime, you can skim through it.
 
 I have no idea of what Python versions it is compatible with. We wrote it with Python 3.8.10, so you can assume that all versions from there and up are compatible. All packages needed for this *should* be specified in requirements.txt.
 
@@ -10,7 +10,7 @@ In order to use this, you will have to *at least* set the constants in <code>con
 What this code does is essentially create a centralized """botnet""" people can easily add bots to contribute to placing (or maintaining) one or more pictures. The bot will prioritize them in the order they are provided to it. You can specify a json input file via command line arguments, but by default it will try to read "input.json", placed in the same folder as controller.py. The JSON should look like this:
 
 	[
-    	{
+    		{
 			"id": "9b9t",
 			"file": "images/9b9t.txt",
 			"x": 185,
@@ -30,7 +30,7 @@ The txt matrix can be generated using <code>pic_to_map.py</code> (run it using <
 
 The matrix is essentially a list of numbers: those are "reddit numbers", and it's how r/place handles colors. Interestingly enough, we found out that the "input colors" (the one you, and the bot, try to place) have IDs shifted by one compared to how reddit stores the map internally: for instance, you input "31" for white, but it's actually 32 on the map. We aren't sure why, but it's like that.
 
-The bot will then boot up and, if everything is set up, it will await until it is fed some users. We had a web interface set up on (https://pooblic.org/place)[my website] (you can see the "HTML" for it in <code>place/static/webform.py</code>) that would allow everyone and their grandma to feed more accounts to our botnet:
+The bot will then boot up and, if everything is set up, it will await until it is fed some users. We had a web interface set up on [my website](https://pooblic.org/place) (you can see the "HTML" for it in <code>place/static/webform.py</code>) that would allow everyone and their grandma to feed more accounts to our botnet:
 
 ![Here you can see the main page](https://cdn.pooblic.org/github/rplace1.png)
 
@@ -74,15 +74,15 @@ Debugging should be reasonably easy, most if not everything of what happens is l
 ### Weaknesses
 - The support for the full canvas (all four pieces of it) was never fully implemented, and will require slight code adjustments to be used. On top of that, it's not asynchronous.
 - No proxies. It's inefficient, and slightly slower, but we did not have the time to implement it and, besides, this is a bot meant for mass use. What does it matter that some of your accounts are getting rate limited when there are hundreds of them? This aims to overtaken the enemy by exhaustion (in terms of account numbers), rather than by speed.
-- Skidded code from (https://github.com/rdeepak2002/reddit-place-script-2022)[another bot] for fetching the map. GraphQL? No, thanks, I'm good.
+- Skidded code from [another bot](https://github.com/rdeepak2002/reddit-place-script-2022) for fetching the map. GraphQL? No, thanks, I'm good.
 
 ## Related tools
 What follows is a list of tools in this repo or others that may make using this less painful, or that were related to the project in some other way.
-- (https://gist.github.com/realfraze/3635e01551f33d1744219aa69edac68f)[cookiethief] is a simple script I wrote in the earliest stages of the bot, when login was still manual, to automating getting the Reddit bearer token from your browser. It has no purpose within this project anymore, but it may help you with other, less sophisticated bots. Note that you will also have to install the browser-cookie3 and pyjwt packages in order to use it.
-- (https://gist.github.com/realfraze/0930cb7042d3fca41b0ddf22f2ceec65)[login.py] is a script we used for testing logins, printing tokens and fetching account usernames. I removed it from the repo because it was junk, but you can still get it from the link if you want to test or something. Note that it must be placed within this repo to work correctly.
-- (https://github.com/ItCameFr0mMars/RedditBotMaker)[RedditBotMaker] by ItCameFr0mMars is a (https://github.com/SeleniumHQ/selenium)[Selenium] (gross) script that creates new accounts and automatically feeds them to the botnet. It's all hardcoded, but by changing a couple lines, you should be able to get it to run with your own instance of this.
+- [cookiethief](https://gist.github.com/realfraze/3635e01551f33d1744219aa69edac68f) is a simple script I wrote in the earliest stages of the bot, when login was still manual, to automating getting the Reddit bearer token from your browser. It has no purpose within this project anymore, but it may help you with other, less sophisticated bots. Note that you will also have to install the browser-cookie3 and pyjwt packages in order to use it.
+- [login.py](https://gist.github.com/realfraze/0930cb7042d3fca41b0ddf22f2ceec65) is a script we used for testing logins, printing tokens and fetching account usernames. I removed it from the repo because it was junk, but you can still get it from the link if you want to test or something. Note that it must be placed within this repo to work correctly.
+- [RedditBotMaker](https://github.com/ItCameFr0mMars/RedditBotMaker) by ItCameFr0mMars is a [Selenium](https://github.com/SeleniumHQ/selenium) (gross) script that creates new accounts and automatically feeds them to the botnet. It's all hardcoded, but by changing a couple lines, you should be able to get it to run with your own instance of this.
 
 ## Credits
-- (https://github.com/WiredTombstone)[jj20051] for suggesting a fix to a bug that was causing Reddit to rate limit us. We would still be getting 429'd if it wasn't for him.
-- The authors of [https://github.com/rdeepak2002/reddit-place-script-2022](the other bot) for the map script. I'm really not a fan of how they made their thing, but without their map-fetching code, this wouldn't have been possible.
-- The (https://discord.gg/9b9t)[9b9t] and [https://www.reddit.com/r/DragaliaLost/](Dragalia) communities for feeding the bot with an unholy amount of accounts, and in particular (https://github.com/ItCameFr0mMars)[ItCameFr0mMars] for throwing in more than anyone else.
+- [jj20051](https://github.com/WiredTombstone) for suggesting a fix to a bug that was causing Reddit to rate limit us. We would still be getting 429'd if it wasn't for him.
+- The authors of [the other bot](https://github.com/rdeepak2002/reddit-place-script-2022) for the map script. I'm really not a fan of how they made their thing, but without their map-fetching code, this wouldn't have been possible.
+- The [9b9t](https://discord.gg/9b9t) and [Dragalia](https://www.reddit.com/r/DragaliaLost/) communities for feeding the bot with an unholy amount of accounts, and in particular [ItCameFr0mMars](https://github.com/ItCameFr0mMars) for throwing in more than anyone else.
