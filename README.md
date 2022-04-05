@@ -73,7 +73,7 @@ Debugging should be reasonably easy, most if not everything of what happens is l
 
 ### Weaknesses
 - The support for the full canvas (all four pieces of it) was never fully implemented, and will require slight code adjustments to be used. On top of that, it's not asynchronous.
-- No proxies. It's inefficient, and slightly slower, but we did not have the time to implement it and, besides, this is a bot meant for mass use. What does it matter that some of your accounts are getting rate limited when there are hundreds of them? This aims to overtaken the enemy by exhaustion (in terms of account numbers), rather than by speed.
+- No proxies. It's inefficient, and slightly slower, but we did not have the time to implement it and, besides, this is a bot meant for mass use. What does it matter that some of your accounts are getting rate limited when there are hundreds of them? This aims to overtake the enemy by exhaustion (in terms of account numbers), rather than by speed.
 - Skidded code from [another bot](https://github.com/rdeepak2002/reddit-place-script-2022) for fetching the map. GraphQL? No, thanks, I'm good.
 
 ## Related tools
