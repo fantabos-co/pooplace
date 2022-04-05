@@ -32,19 +32,19 @@ The matrix is essentially a list of numbers: those are "reddit numbers", and it'
 
 The bot will then boot up and, if everything is set up, it will await until it is fed some users. We had a web interface set up on [my website](https://pooblic.org/place) (you can see the "HTML" for it in <code>place/static/webform.py</code>) that would allow everyone and their grandma to feed more accounts to our botnet:
 
-![Here you can see the main page](https://cdn.pooblic.org/github/rplace1.png)
+<p align="center"><img alt="Here you can see the main page" src="https://cdn.pooblic.org/github/rplace1.png"></p>
 
 Users would press "feed in an account", and they would be redirected to a reddit authorization page:
 
-![Wait, only identity?](https://cdn.pooblic.org/github/rplace2.png)
+<p align="center"><img alt="Wait, only identity?" src="https://cdn.pooblic.org/github/rplace2.png"></p>
 
 ...yeah, the only scope we ask for is "identity". Apparently, authorizing an application, no matter what permissions it got, was enough for that application to place pixels in your name. Nice permissions, Reddit. After that, you would be redirected back to my website:
 
-![ID assignment](https://cdn.pooblic.org/github/rplace3.png)
+<p align="center"><img alt="ID assignment" src="https://cdn.pooblic.org/github/rplace3.png"></p>
 
 You could use that id to read the "stats" page linked in the main hub. Truth be told, that stats page was a bit disappointing. We planned on implementing also a pixel placing counter, but we never got around to it. Instead, it was pretty much just a cooldown viewer:
 
-![Yea, sometimes reddit would give an unreasonable cooldown](https://cdn.pooblic.org/github/rplace4.png)
+<p align="center"><img alt="Yea, sometimes reddit would give an unreasonable cooldown" src="https://cdn.pooblic.org/github/rplace4.png"></p>
 
 Our nginx configuration looked something like this:
 
