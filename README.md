@@ -3,7 +3,7 @@ PooPlace (how creative, I know) is the name we (I) gave to the bot [me](https://
 
 I have no idea of what Python versions it is compatible with. We wrote it with Python 3.8.10, so you can assume that all versions from there and up are compatible. All packages needed for this *should* be specified in requirements.txt.
 
-In order to use this, you will have to *at least* set the constants in <code>controller.py</code> (which is the main part of the script, the one you are supposed to run) and possibly adapt parts of the code. It's also entirely possible that you will have to adjust parts of the bot to your specific needs. This was never meant for mass distribution and is only provided "as is". It may work, it may not work, it may need some fixing. It did the trick for us, and it may or may not do it for you.
+In order to use this, you will have to *at least* set the constants in <code>controller.py</code> (which is the main part of the script, the one you are supposed to run). It's also entirely possible that you will have to adjust parts of the bot to your specific needs. This was never meant for mass distribution and is only provided "as is". It may work, it may not work, it may need some fixing. It did the trick for us, and it may or may not do it for you.
 
 ## How it works
 
