@@ -6,6 +6,4 @@ aioconsole
 numpy
 praw
 pillow
-browser_cookie3
-jwt
 aioauth

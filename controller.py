@@ -51,10 +51,12 @@ class RefreshableOAuth2Service(OAuth2Service):
 
 DISPATCHER_MAX_SLEEP = 60
 MAP_UPDATE_INTERVAL = 20 #Will request a map update every MAP_UPDATE_INTERVAL seconds
-USER_AGENT = "python:placepoop:1.0 (by /u/Exact_Worldliness265)"
-CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
-CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
-REDIRECT_URI = "https://pooblic.org/place"
+
+CLIENT_ID = ""
+CLIENT_SECRET = ""
+REDIRECT_URI = ""
+USER_AGENT = "python:placepoop:1.0 (by /u/FraazT0)"
+PORT = 42069
 
 CLIENT = RefreshableOAuth2Service(
 	name="reddit",
@@ -76,7 +78,6 @@ logging.getLogger('quart.app').removeHandler(serving_handler)
 async def landing():
 	"""Handles requests to the defined return URI."""
 	if 'code' in request.args:
-		# user = "unk" #TODO fetch acc name	
 		# when user is redirected back after authorizing:
 		code = request.args["code"]
 		try:
@@ -149,6 +150,7 @@ async def process_board(users: Pool, pixels: List[TaskImage], board: PixelMap) -
 					# try to fill this pixel
 					try:
 						if await usr.put(img.arr[py][px], img.x + px, img.y + py):
+							board[img.y + py][img.x + px] = img.arr[py][px]
 							count += 1
 					except UnauthorizedError as e:
 						logger.error("Unauthorized %s : %s [%s]", usr.name, usr.token, str(e))
@@ -191,7 +193,6 @@ async def run(users: Pool, pixels: List[TaskImage], board: PixelMap):
 							await usr.refresh_token()
 							POOL.serialize()
 						except Exception:
-							# logger.debug(e) # non serve: logger.exception mostra proprio la stacktrace
 							logger.exception("Failed to refresh user %s", usr)
 							users.remove_user(usr.name)
 					else:
@@ -261,9 +262,8 @@ def main():
 	loop = asyncio.get_event_loop()
 	board_task = loop.create_task(run(POOL, pixels, board))
 	# users_task = loop.create_task(gen_users(POOL))
-	APP.run(host="127.0.0.1", port=52691, loop=loop, use_reloader=False)
+	APP.run(host="127.0.0.1", port=PORT, loop=loop, use_reloader=False)
 
 if __name__ == "__main__":
-	setup_logging("pooblic-placebot", level=DEBUG)
-
+	setup_logging("placebot", level=DEBUG)
 	main()

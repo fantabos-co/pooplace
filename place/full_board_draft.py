@@ -19,12 +19,8 @@ from place.user import UnauthorizedError
 
 logger = logging.getLogger()
 
-#https://docs.aiohttp.org/en/stable/web.html
-
-async def get_board(access_token_in):
+def get_board(access_token_in):
 	logger.debug("Connecting and obtaining board images")
-	ws = web.WebSocketResponse()
-	await ws.prepare(request)
 	while True:
 		try:
 			ws = create_connection(
@@ -151,6 +147,3 @@ async def get_board(access_token_in):
 	)
 
 logging.basicConfig(level=logging.DEBUG)
-
-if __name__ == "__main__":
-	i = asyncio.run(get_board("1687434158905-6InyAGX7IjCDIBbqYIkbYaAmSJjYCA")) #...i don't need a token to see the thing, actually

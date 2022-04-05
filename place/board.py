@@ -9,8 +9,9 @@ import logging
 
 from place.user import UnauthorizedError
 
+# Change these if you want to try and use the full board
 HEIGHT = 1000
-WIDTH = 2000
+WIDTH = 1000
 
 class PixelMap:
 	board : np.ndarray
@@ -23,6 +24,12 @@ class PixelMap:
 		return self.board[key]
 
 	async def fetch(self, token:str, attempts:int = 100): #credits: https://github.com/rdeepak2002/reddit-place-script-2022
+
+		# Uncomment to use untested, unoptimized, synchronous method for the full board
+		# from place.full_board_draft import get_board
+		# self.board = get_board(token)
+		# return
+
 		self.logger.info("fetching board")
 
 		ws = websocket.create_connection(

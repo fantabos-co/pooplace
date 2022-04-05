@@ -8,14 +8,10 @@ from uuid import uuid4
 
 from aioconsole import ainput
 from place.colors import RedditColor
+from ..controller import CLIENT_ID, CLIENT_SECRET, USER_AGENT
 
 def get_payload(x:int, y:int, c:int):
 	return """{"operationName":"setPixel","variables":{"input":{"actionName":"r/replace:set_pixel","PixelMessageData":{"coordinate":{"x":%d,"y":%d},"colorIndex":%d,"canvasIndex":%d}}},"query":"mutation setPixel($input: ActInput!) {\\n act(input: $input) {\\n data {\\n ... on BasicMessage {\\n id\\n data {\\n ... on GetUserCooldownResponseMessageData {\\n nextAvailablePixelTimestamp\\n __typename\\n }\\n ... on SetPixelResponseMessageData {\\n timestamp\\n __typename\\n }\\n __typename\\n }\\n __typename\\n }\\n __typename\\n }\\n __typename\\n }\\n}\\n"}""" % (x, y, c, 0)
-
-_ALL_SCOPES = ["account", "creddits", "edit", "flair", "history", "identity", "livemanage", "modconfig", "modcontributors", "modflair", "modlog", "modmail", "modnote", "modothers", "modposts", "modself", "modwiki", "mysubreddits", "privatemessages", "read", "report", "save", "structuredstyles", "submit", "subscribe", "vote", "wikiedit", "wikiread"]
-CLIENT_ID = "3031IeKHSaGKW8xyWyYdrA"
-CLIENT_SECRET = "WIjkxcenQttaXKGRXbL1o1jWpUxIpw"
-USER_AGENT = "python:placepoop:1.0 (by /u/Exact_Worldliness265)"
 
 class UnauthorizedError(Exception):
 	refreshable : bool
@@ -80,9 +76,8 @@ class User:
 		async with aiohttp.ClientSession() as sess:
 			async with sess.post(
 				"https://www.reddit.com/api/v1/access_token",
-				#data=f"grant_type=refresh_token&refresh_token={self.refresh}".encode('utf-8'),
 				data=gayson,
-				headers={'User-Agent': 'python:placepoop:1.0 (by /u/Exact_Worldliness265)'},
+				headers={'User-Agent': USER_AGENT},
 				auth=aiohttp.BasicAuth(login=CLIENT_ID, password=CLIENT_SECRET),
 			) as res:
 				data = await res.json()
@@ -93,7 +88,7 @@ class User:
 		
 	@property
 	def headers(self):
-		return {
+		return { #the header is stolen from the other bot, so we saw it fitting to reuse their client name.
 			"accept": "*/*",
 			"apollographql-client-name": "mona-lisa",
 			"apollographql-client-version": "0.0.1",
